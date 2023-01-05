@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "es6",
     "module": "commonjs",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -21,28 +21,11 @@
     "outDir": "build",
     "removeComments": true,
     "skipLibCheck": true,
-    "paths": {
-      "@root/*": [
-        "./*"
-      ],
-      "@utils/*": [
-        "utils/*"
-      ],
-      "@v1/*": [
-        "v1/*"
-      ]
-    }
-  },
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true,
-    "require": [
-      "tsconfig-paths/register"
-    ]
+    "declaration": true,
+    "declarationDir": "./build/types"
   },
   "include": [
-    "src/**/*",
-    "src/interfacses.ts",
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
