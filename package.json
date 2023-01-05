@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ameriq8/know-name-db.git"
+    "url": "git+https://github.com/Ameriq8/4db.git"
   },
   "keywords": [
     "nosql",
@@ -32,9 +32,9 @@
     "database",
     "better-db"
   ],
-  "homepage": "https://github.com/Ameriq8/know-name-db#readme",
+  "homepage": "https://github.com/Ameriq8/4db#readme",
   "bugs": {
-    "url": "https://github.com/Ameriq8/know-name-db/issues"
+    "url": "https://github.com/Ameriq8/4db/issues"
   },
   "dependencies": {
     "dotenv": "^16.0.0",
