@@ -14,7 +14,28 @@
   "bin": {
     "4db": "./build/index.js"
   },
-  "files": ["build"],
+  "files": [
+    "build"
+  ],
+  "author": {
+    "name": "Ameriq8",
+    "email": "amer.mo@4meg.net",
+    "url": "https://github.com/Ameriq8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ameriq8/know-name-db.git"
+  },
+  "keywords": [
+    "nosql",
+    "sql",
+    "database",
+    "better-db"
+  ],
+  "homepage": "https://github.com/Ameriq8/know-name-db#readme",
+  "bugs": {
+    "url": "https://github.com/Ameriq8/know-name-db/issues"
+  },
   "dependencies": {
     "dotenv": "^16.0.0",
     "figlet": "^1.5.2",
