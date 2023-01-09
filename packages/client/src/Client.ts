@@ -13,13 +13,17 @@ export class Client {
 
   public sql: postgres.Sql<{}>;
 
-  constructor(connectionDetails: IConnectionDetails) {
-    this.logger = Logger.getLogger();
-    this.host = connectionDetails.host;
-    this.port = connectionDetails.port;
-    this.database = connectionDetails.database;
-    this.username = connectionDetails.username;
-    this.password = connectionDetails.password;
+  constructor(connectionDetails: IConnectionDetails | string) {
+    if (typeof connectionDetails == 'string') {
+    } else {
+      this.logger = Logger.getLogger();
+      this.host = connectionDetails.host;
+      this.port = connectionDetails.port;
+      this.database = connectionDetails.database;
+      this.username = connectionDetails.username;
+      this.password = connectionDetails.password;
+    }
+
     this.connect();
   }
 
@@ -35,7 +39,9 @@ export class Client {
 
   private connect(): void {
     this.logger.info('Connecting to postgresql database...');
-    this.sql = postgres(this.getConnectionDetails());
+    this.sql = postgres(
+      'postgresql://postgres:Sofe@@00Ameriq8@db.iiqilpewnvzzqobvburp.supabase.co:5432/postgres',
+    );
     Logger.getLogger().success('4Database connected');
   }
 
@@ -43,11 +49,3 @@ export class Client {
     this.logger.debug(query);
   }
 }
-
-// export default new Client({
-//   host: 'localhost',
-//   port: 3002,
-//   database: '4db',
-//   username: 'postgres',
-//   password: 'Ameriq81',
-// });
