@@ -39,9 +39,7 @@ export class Client {
 
   private connect(): void {
     this.logger.info('Connecting to postgresql database...');
-    this.sql = postgres(
-      'postgresql://postgres:Sofe@@00Ameriq8@db.iiqilpewnvzzqobvburp.supabase.co:5432/postgres',
-    );
+    this.sql = postgres(this.getConnectionDetails());
     Logger.getLogger().success('4Database connected');
   }
 
