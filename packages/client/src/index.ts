@@ -9,27 +9,4 @@ const client = new Client({
   password: 'Ameriq81',
 });
 
-(async () => {
-  const UserModel = await model('users', {
-    id: {
-      type: 'character',
-      primary: true,
-      nullable: false,
-    },
-    username: {
-      type: 'character',
-      nullable: true,
-    },
-  });
-
-  UserModel.findOne({
-    where: {
-      id: 'tv',
-      username: 'text',
-    },
-  }).then((t) => {
-    console.log(t.id);
-  });
-})()
-
 export default client;
