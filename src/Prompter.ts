@@ -27,15 +27,3 @@ export default class Prompter implements IPrompter {
     return Prompter.instance;
   }
 }
-
-// (async () => {
-//   const onSubmit = (prompt, answer) => console.log(answer);
-//   const onCancel = (prompt) => {
-//     console.log('Never stop prompting!');
-//     return true;
-//   };
-
-//   const response = await prompts(startUpQuestins, { onSubmit, onCancel });
-
-//   AdvancedLogger.getLogger().debug(response);
-// })();

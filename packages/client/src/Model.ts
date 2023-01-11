@@ -1,21 +1,44 @@
-import client from './index';
-import { parseModelToSQLTable } from './utils/helpers';
-import { ISchema } from './utils/interfaces';
-import { Convert } from './utils/types';
+import { Client } from './Client';
+import {
+  checkAndChangeUuidSchema,
+  parseModelToSQLTable,
+  parseObjectToSqlParams,
+  parseToInsertQuery,
+} from './utils/helpers';
+import { IWhereInput, ISchema, ICreateInput } from './utils/interfaces';
 
-export async function model<T extends ISchema>(tableName: string, schema: T) {
-  type S = Convert<T>;
- 
-console.log(client)
-  await client.db(parseModelToSQLTable(tableName, schema));
+export function model<T extends ISchema>(tableName: string, schema: T, client: Client) {
+
+  if (!tableName) throw new Error('tableName is required field');
+  if (!schema) throw new Error('schema is required field');
+  if (!client) throw new Error('client is required field');
 
   class Model {
-    static async findOne(where: { where: S }) {
-      return {
-        id: 'hfdgdfr',
-      };
+    static async findOne({ where }: IWhereInput<T>): Promise<any> {
+      return await client.query(
+        `SELECT * FROM ${tableName} WHERE ${parseObjectToSqlParams(where)};`[0],
+      );
     }
-    static save() {}
+
+    // static async findMany(where: IWhereInput<T>) {}
+
+    static async create({ data }: ICreateInput<T>) {
+      const newData = checkAndChangeUuidSchema(data, schema);
+      const res = await client
+        .query(parseToInsertQuery(tableName, newData))
+        .catch((err) => console.log(err));
+      // console.log(res);
+      return res;
+    }
+
+    static async build(): Promise<void> {
+      const query = parseModelToSQLTable(tableName, schema);
+      // console.log(query)
+      await client.query(query).catch((err) => {
+        console.log(err);
+      });
+    }
   }
+
   return Model;
 }

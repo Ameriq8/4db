@@ -1,11 +1,18 @@
-import { IColumn, ISchema, TypesMap } from './interfaces';
+import { v4 as uuidv4 } from 'uuid';
+import { IColumn, IConnectionDetails, ISchema, TypesMap } from './interfaces';
 
-export const CreateUUIDExtenstion = (sql) => {
-  sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+export const regex = {
+  v4: /(?:^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}$)|(?:^0{8}-0{4}-0{4}-0{4}-0{12}$)/u,
+  v5: /(?:^[a-f0-9]{8}-[a-f0-9]{4}-5[a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}$)|(?:^0{8}-0{4}-0{4}-0{4}-0{12}$)/u,
+};
+
+export const jsonSchema = {
+  v4: { type: 'string', pattern: regex.v4.toString().slice(1, -2) },
+  v5: { type: 'string', pattern: regex.v5.toString().slice(1, -2) },
 };
 
 export const parseModelToSQLTable = (tableName, model: ISchema): string => {
-  // const typesAcceptsMaxLength = ['CHAR', 'VARCHAR', 'BPCHAR', 'TEXT'];
+  const typesAcceptsMaxLength = ['character', 'varchar', 'text'];
   let sql = '';
 
   sql += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
@@ -17,9 +24,12 @@ export const parseModelToSQLTable = (tableName, model: ISchema): string => {
 
     sql += `  ${key} ${column.type}`;
 
-    // if (column.maxLength as Number > 0 && typesAcceptsMaxLength.includes(column.type))
-    //   sql += `(${column.maxLength})`;
-    // else throw new TypeError('Invalid type to use a maximum length with it.');
+    if (column.maxLength != undefined) {
+      if (column.maxLength >= 1 && typesAcceptsMaxLength.includes(column.type))
+        sql += `(${column.maxLength})`;
+      else throw new Error('Maximum length must be 1 or more than it');
+    } else if (column.maxLength != undefined && typeof column.maxLength != 'number')
+      new TypeError('Invalid type to use a maximum length with it.');
 
     if (column.array) sql += '[]';
 
@@ -36,28 +46,28 @@ export const parseModelToSQLTable = (tableName, model: ISchema): string => {
 
     if (column.default) {
       switch (column.type) {
-        case 'BIGINT':
-        case 'BIGSERIAL':
-        case 'FLOAT8':
-        case 'INTEGER':
-        case 'SMALLINT':
+        case 'bigint':
+        case 'bigserial':
+        case 'serial':
+        case 'smallserial':
+        case 'float8':
+        case 'integer':
+        case 'smallint':
           sql += ` DEFAULT ${validateNumber(column.default, column.type)}`;
           break;
 
-        case 'BOOLEAN':
+        case 'boolean':
           sql += ` DEFAULT ${column.default ? 'TRUE ' : 'FALSE'}`;
           break;
 
-        case 'VARCHAR':
-          // CHARACTER
+        case 'varchar':
         case 'character':
-        case 'BPCHAR':
-        case 'TEXT':
+        case 'text':
           sql += ` DEFAULT ${column.default}`;
           break;
 
-        case 'JSON':
-        case 'JSONB':
+        case 'json':
+        case 'jsonb':
           try {
             sql += ` DEFAULT ${JSON.stringify(column.default)}`;
           } catch (err) {
@@ -65,15 +75,11 @@ export const parseModelToSQLTable = (tableName, model: ISchema): string => {
           }
           break;
 
-        case 'DATE':
-        case 'TIMESTAMP':
-        case 'TIMESTAMPTZ':
-          if (column.default === 'now()') return (sql += ` DEFAULT ${column.default}`);
+        case 'date':
+        case 'timestamp':
+        case 'timestamptz':
+          if (column.default === 'now()') sql += ` DEFAULT ${column.default}`;
           sql += ` DEFAULT ${validateDate(column.default, column.type)}`;
-          break;
-
-        case 'UUID':
-          sql += ` DEFAULT uuid_generate_v4 ()`;
           break;
 
         default:
@@ -82,34 +88,31 @@ export const parseModelToSQLTable = (tableName, model: ISchema): string => {
     }
 
     if (column.foreignKey)
-      sql += `  FOREIGN KEY (${column.foreignKey.column}) REFERENCES ${column.foreignKey.references} (${column.foreignKey.referencesColumn}) ON DELETE ${column.foreignKey.onDelete} ON UPDATE ${column.foreignKey.onUpdate}`;
-
-    if (column.comment) sql += `  COMMENT '${column.comment}'`;
+      sql += ` FOREIGN KEY (${column.foreignKey.column}) REFERENCES ${column.foreignKey.references} (${column.foreignKey.referencesColumn}) ON DELETE ${column.foreignKey.onDelete} ON UPDATE ${column.foreignKey.onUpdate}`;
 
     sql += ',\n';
   }
 
   sql = sql.slice(0, -2) + '\n);';
 
-  console.log(sql)
   return sql;
 };
 
 export const validateNumber = (num: Number, type: keyof TypesMap): String => {
   switch (type) {
-    case 'SMALLINT':
+    case 'smallint':
       if (num < -32768 || num > 32767) {
         throw new Error(`Number out of range for SMALLINT data type: ${num}`);
       }
       break;
 
-    case 'INTEGER':
+    case 'integer':
       if (num < -2147483648 || num > 2147483647) {
         throw new Error(`Number out of range for INTEGER data type: ${num}`);
       }
       break;
 
-    case 'FLOAT8':
+    case 'float8':
       if (Number.isInteger(num)) {
         if (num < -1.7976931348623157e308 || num > 1.7976931348623157e308) {
           throw new Error(`Number out of range for FLOAT8 data type: ${num}`);
@@ -117,7 +120,7 @@ export const validateNumber = (num: Number, type: keyof TypesMap): String => {
       }
       break;
 
-    case 'SMALLSERIAL':
+    case 'smallserial':
       if (Number.isInteger(num)) {
         if (num < 1 || num > 32767) {
           throw new Error(`Number out of range for SMALLSERIAL data type: ${num}`);
@@ -125,7 +128,7 @@ export const validateNumber = (num: Number, type: keyof TypesMap): String => {
       }
       break;
 
-    case 'BIGSERIAL':
+    case 'serial':
       if (Number.isInteger(num)) {
         if (num < 1 || num > 2147483647) {
           throw new Error(`Number out of range for SERIAL data type: ${num}`);
@@ -133,7 +136,7 @@ export const validateNumber = (num: Number, type: keyof TypesMap): String => {
       }
       break;
 
-    case 'BIGSERIAL':
+    case 'bigserial':
       if (Number.isInteger(num)) {
         if (num < 1 || num > 9223372036854775807) {
           throw new Error(`Number out of range for BIGSERIAL data type: ${num}`);
@@ -141,7 +144,7 @@ export const validateNumber = (num: Number, type: keyof TypesMap): String => {
       }
       break;
 
-    case 'BIGINT':
+    case 'bigint':
       if (num < -9223372036854775808 || num > 9223372036854775807) {
         throw new Error(`Number out of range for BIGINT data type: ${num}`);
       }
@@ -156,19 +159,19 @@ export const validateNumber = (num: Number, type: keyof TypesMap): String => {
 
 export const validateDate = (date: Date, type: keyof TypesMap) => {
   switch (type) {
-    case 'DATE':
+    case 'date':
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date.toISOString())) {
         throw new Error(`Invalid format for DATE data type: ${date.toISOString()}`);
       }
       break;
 
-    case 'TIMESTAMP':
+    case 'timestamp':
       if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(date.toISOString())) {
         throw new Error(`Invalid format for TIMESTAMP data type: ${date.toISOString()}`);
       }
       break;
 
-    case 'TIMESTAMPTZ':
+    case 'timestamptz':
       if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(date.toISOString())) {
         throw new Error(`Invalid format for TIMESTAMPTZ data type: ${date.toISOString()}`);
       }
@@ -181,12 +184,56 @@ export const validateDate = (date: Date, type: keyof TypesMap) => {
   return date.toISOString();
 };
 
-// try {
-//   const date = new Date();
-//   const type = 'DATE';
-//   const sql = convertToSqlDate(date, type);
-//   console.log(sql);
-//   // Output: '2020-07-27T00:00:00.000Z'
-// } catch (error) {
-//   console.error(error);
-// }
+export const parsePostgresUrl = (url: string): IConnectionDetails => {
+  const urlRegex = /postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/;
+  const match = url.match(urlRegex);
+  if (!match) throw new Error(`Invalid PostgreSQL URL: ${url}`);
+
+  const [host, port, database, username, password] = match;
+
+  return {
+    host,
+    port: parseInt(port),
+    database,
+    username,
+    password,
+  };
+};
+
+export const parseObjectToSqlParams = (where: object): string => {
+  let whereParams: string[] = [];
+  for (let key in where) {
+    if (where.hasOwnProperty(key)) {
+      let value = where[key];
+      whereParams.push(`${key} = ${value}`);
+    }
+  }
+
+  return whereParams.join(' AND ');
+};
+
+export const parseToInsertQuery = (tableName: string, obj: any) => {
+  const keys = Object.keys(obj);
+  const values = Object.values(obj);
+
+  const columns = keys.join(', ');
+  const vals = values
+    .map((value) => `${typeof value === 'string' ? `'${value}'` : value}`)
+    .join(', ');
+
+  const sql = `INSERT INTO ${tableName} (${columns}) VALUES (${vals});`;
+
+  console.log(sql);
+
+  return sql;
+};
+
+export const checkAndChangeUuidSchema = (input: any, schema: any) => {
+  for (let column in schema) {
+    if (schema[column].type === 'uuid') {
+      input[column] ? input[column].toString() : (input[column] = uuidv4().toString());
+    }
+  }
+
+  return input;
+};

@@ -10,8 +10,8 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictNullChecks": false,
@@ -25,7 +25,8 @@
     "declarationDir": "./build/types"
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "./test",
   ],
   "exclude": [
     "node_modules",

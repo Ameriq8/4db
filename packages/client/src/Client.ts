@@ -1,5 +1,6 @@
 import postgres from 'postgres';
 import Logger from './Logger';
+import { parsePostgresUrl } from './utils';
 import { IConnectionDetails } from './utils/interfaces';
 
 export class Client {
@@ -13,17 +14,26 @@ export class Client {
 
   public sql: postgres.Sql<{}>;
 
-  constructor(connectionDetails: IConnectionDetails) {
+  constructor(connectionDetails: IConnectionDetails | string) {
     this.logger = Logger.getLogger();
-    this.host = connectionDetails.host;
-    this.port = connectionDetails.port;
-    this.database = connectionDetails.database;
-    this.username = connectionDetails.username;
-    this.password = connectionDetails.password;
+    if (typeof connectionDetails === 'string') {
+      const parsedUrl = parsePostgresUrl(connectionDetails);
+      this.host = parsedUrl.host;
+      this.port = parsedUrl.port;
+      this.database = parsedUrl.database;
+      this.username = parsedUrl.username;
+      this.password = parsedUrl.password;
+    } else {
+      this.host = connectionDetails.host;
+      this.port = connectionDetails.port;
+      this.database = connectionDetails.database;
+      this.username = connectionDetails.username;
+      this.password = connectionDetails.password;
+    }
     this.connect();
   }
 
-  public getConnectionDetails(): IConnectionDetails {
+  private getConnectionDetails(): IConnectionDetails {
     return {
       host: this.host,
       port: this.port,
@@ -39,15 +49,8 @@ export class Client {
     Logger.getLogger().success('4Database connected');
   }
 
-  async db(query: string) {
-    this.logger.debug(query);
+  public async query(query: string): Promise<any> {
+    console.log(this.sql`${query}`)
+    await this.sql`${query}`;
   }
 }
-
-// export default new Client({
-//   host: 'localhost',
-//   port: 3002,
-//   database: '4db',
-//   username: 'postgres',
-//   password: 'Ameriq81',
-// });
