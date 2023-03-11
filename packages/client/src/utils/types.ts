@@ -1,10 +1,6 @@
 import { IColumn, ISchema, TypesMap } from './interfaces';
 
-export type ForeignKeyActionTypes = 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'NO ACTION';
-
-export type Convert<T extends ISchema> = {
-  [prop in keyof T]: TypesMap[T[prop]['type']];
-};
+export type DriverTypes = 'json';
 
 type If<B extends boolean, T1, T2 = null> = B extends true ? T1 : T2;
 

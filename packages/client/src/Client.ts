@@ -1,56 +1,83 @@
-import postgres from 'postgres';
-import Logger from './Logger';
-import { parsePostgresUrl } from './utils';
-import { IConnectionDetails } from './utils/interfaces';
+import fs from 'fs';
+import { Collection } from './Collection';
+import { DriverTypes } from './utils';
+import { parseModelSchema } from './utils/helpers';
+import { IClientOptions, ISchema } from './utils/interfaces';
 
 export class Client {
-  public logger: Logger;
+  private driver: DriverTypes = 'json';
+  private filePath: string;
+  private data: { [key: string]: { schema: ISchema; data: any[] } };
 
-  private host: string;
-  private port: number;
-  private database: string;
-  private username: string;
-  private password: string;
+  constructor(clientOptions: IClientOptions) {
+    this.driver = clientOptions.driver;
+    this.filePath = clientOptions.filePath;
 
-  public sql: postgres.Sql<{}>;
-
-  constructor(connectionDetails: IConnectionDetails | string) {
-    this.logger = Logger.getLogger();
-    if (typeof connectionDetails === 'string') {
-      const parsedUrl = parsePostgresUrl(connectionDetails);
-      this.host = parsedUrl.host;
-      this.port = parsedUrl.port;
-      this.database = parsedUrl.database;
-      this.username = parsedUrl.username;
-      this.password = parsedUrl.password;
-    } else {
-      this.host = connectionDetails.host;
-      this.port = connectionDetails.port;
-      this.database = connectionDetails.database;
-      this.username = connectionDetails.username;
-      this.password = connectionDetails.password;
-    }
-    this.connect();
+    this.checkClientOptions();
+    this.loadData();
   }
 
-  private getConnectionDetails(): IConnectionDetails {
+  private getClientOptions(): IClientOptions {
     return {
-      host: this.host,
-      port: this.port,
-      database: this.database,
-      username: this.username,
-      password: this.password,
+      driver: this.driver,
+      filePath: this.filePath,
     };
   }
 
-  private connect(): void {
-    this.logger.info('Connecting to postgresql database...');
-    this.sql = postgres(this.getConnectionDetails());
-    Logger.getLogger().success('4Database connected');
+  private checkClientOptions() {
+    if (!this.getClientOptions()) throw new Error('Invalid client options');
+    if (!this.driver) throw new Error('Invalid driver');
+    if (!this.filePath) throw new Error('Invalid file path');
+
+    const pathExists = this.pathExists();
+    if (!pathExists) throw new Error('File path does not exist');
   }
 
-  public async query(query: string): Promise<any> {
-    console.log(this.sql`${query}`)
-    await this.sql`${query}`;
+  private pathExists() {
+    return new Promise((resolve, _reject) => {
+      fs.access(this.filePath, fs.constants.F_OK, (err) => {
+        if (err) {
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+  }
+
+  private loadData() {
+    const json = fs.readFileSync(this.filePath, 'utf-8');
+    this.data = JSON.parse(json);
+  }
+
+  private saveCollection() {
+    const json = JSON.stringify(this.data, null, 2);
+    fs.writeFileSync(this.filePath, json);
+  }
+
+  public insertCollection(collectionName: string, collectionSchema: ISchema) {
+    if (!this.data[collectionName]) {
+      this.data[collectionName] = {
+        schema: parseModelSchema(collectionSchema),
+        data: [],
+      };
+    } else {
+      this.data[collectionName].schema = parseModelSchema(collectionSchema);
+    }
+    this.saveCollection();
+  }
+
+  public getCollection(collectionName: string) {
+    const collectionData = this.data[collectionName].data;
+    const collectionSchema = this.data[collectionName].schema;
+    if (!collectionData || !collectionSchema) {
+      throw new Error(`Collection ${collectionName} does not exist`);
+    }
+    const collection = {
+      collectionName,
+      schema: collectionSchema,
+      data: collectionData,
+    };
+    return new Collection(this.filePath, collection);
   }
 }

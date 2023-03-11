@@ -28,11 +28,8 @@
   },
   "keywords": [
     "orm",
-    "sql",
+    "better-json",
     "database",
-    "better-db",
-    "postgresql",
-    "pgsql",
     "4db"
   ],
   "bugs": {
@@ -51,6 +48,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "moment": "^2.29.4",
     "uuid": "^9.0.0"
   }
 }
