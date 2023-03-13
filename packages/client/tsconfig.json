@@ -1,3 +1,35 @@
 {
-    "extends": "../../tsconfig.json"
-}
+    "compilerOptions": {
+      "target": "ESNext",
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "importHelpers": true,
+      "alwaysStrict": true,
+      "sourceMap": true,
+      "forceConsistentCasingInFileNames": true,
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitReturns": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "noImplicitAny": false,
+      "noImplicitThis": false,
+      "strictNullChecks": false,
+      "esModuleInterop": true,
+      "rootDir": "src",
+      "baseUrl": "src",
+      "outDir": "build",
+      "removeComments": true,
+      "skipLibCheck": true,
+      "declaration": true,
+      "declarationDir": "./build/types"
+    },
+    "include": [
+      "src/**/*",
+      "./test",
+    ],
+    "exclude": [
+      "node_modules",
+      "*/node_modules/**"
+    ]
+  }

@@ -10,22 +10,15 @@ export class Client {
   private data: { [key: string]: { schema: ISchema; data: any[] } };
 
   constructor(clientOptions: IClientOptions) {
+    this.checkClientOptions();
+    
     this.driver = clientOptions.driver;
     this.filePath = clientOptions.filePath;
 
-    this.checkClientOptions();
     this.loadData();
   }
 
-  private getClientOptions(): IClientOptions {
-    return {
-      driver: this.driver,
-      filePath: this.filePath,
-    };
-  }
-
   private checkClientOptions() {
-    if (!this.getClientOptions()) throw new Error('Invalid client options');
     if (!this.driver) throw new Error('Invalid driver');
     if (!this.filePath) throw new Error('Invalid file path');
 
